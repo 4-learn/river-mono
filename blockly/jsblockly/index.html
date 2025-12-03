@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>JS Blockly Editor（之後要串 LLM 的版本）</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    #topBar {
+      height: 40px;
+      background: #1e88e5;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      justify-content: space-between;
+    }
+    #blocklyArea {
+      height: calc(100% - 40px);
+      width: 100%;
+      position: relative;
+    }
+    #blocklyDiv {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    #output {
+      position: absolute;
+      right: 0;
+      top: 40px;
+      width: 250px;
+      height: calc(100% - 40px);
+      background: #f4f4f4;
+      border-left: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="topBar">
+    <span>JS Blockly Editor（之後要串 LLM 的版本）</span>
+    <button id="runBtn">執行程式</button>
+  </div>
+
+  <!-- Blockly Workspace -->
+  <div id="blocklyArea">
+    <div id="blocklyDiv"></div>
+    <div id="output"></div>
+  </div>
+
+  <!-- 工具箱 -->
+  <xml id="toolbox" style="display:none">
+    <category name="邏輯" colour="#5C81A6">
+      <block type="controls_if"></block>
+      <block type="logic_compare"></block>
+      <block type="logic_operation"></block>
+      <block type="logic_boolean"></block>
+    </category>
+
+    <category name="迴圈" colour="#5CA65C">
+      <block type="controls_repeat_ext"></block>
+      <block type="controls_whileUntil"></block>
+      <block type="controls_for"></block>
+    </category>
+
+    <category name="數學" colour="#5C68A6">
+      <block type="math_number"></block>
+      <block type="math_arithmetic"></block>
+      <block type="math_single"></block>
+    </category>
+
+    <category name="文字" colour="#5CA68D">
+      <block type="text"></block>
+      <block type="text_print"></block>
+      <block type="text_join"></block>
+    </category>
+
+    <category name="變數" colour="#A65C81" custom="VARIABLE"></category>
+
+    <category name="函式" colour="#9A5CA6" custom="PROCEDURE"></category>
+
+    <category name="自訂積木" colour="#7e57c2">
+      <block type="call_api"></block>
+      <block type="call_api_and_do"></block>
+      <block type="get_api_response"></block>
+      <block type="get_api_field"></block>
+    </category>
+  </xml>
+
+  <!-- 1. Blockly 核心 -->
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+
+  <!-- 2. Blockly 中文語言包 -->
+  <script src="https://unpkg.com/blockly/msg/zh-hant.js"></script>
+
+  <!-- 3. JavaScript generator -->
+  <script src="https://unpkg.com/blockly/javascript.min.js"></script>
+
+  <!-- 4. 自訂積木定義（外觀） -->
+  <script src="blocks/api_block.js"></script>
+
+  <!-- 5. 自訂積木產生器（JS runtime） -->
+  <script src="generators/api_block.js"></script>
+
+  <!-- 6. WorkSpace 初始化（務必放最下面） -->
+  <script>
+    const blocklyDiv = document.getElementById('blocklyDiv');
+    const toolbox = document.getElementById('toolbox');
+    const output = document.getElementById('output');
+
+    const workspace = Blockly.inject(blocklyDiv, {
+      toolbox: toolbox,
+      scrollbars: true,
+      locale: Blockly.Msg['zh-hant']
+    });
+
+    // 設定 Layout
+    function onresize() {
+      blocklyDiv.style.height = (window.innerHeight - 40) + 'px';
+      Blockly.svgResize(workspace);
+    }
+    window.addEventListener('resize', onresize, false);
+    onresize();
+
+    // 覆寫 console.log → 輸出到右側 Output Pane
+    const originLog = console.log;
+    console.log = function(...msg) {
+      originLog(...msg);
+      output.textContent += msg.join(' ') + '\n';
+    };
+
+    // 執行程式
+    function runCode() {
+      output.textContent = "";
+      const code = Blockly.JavaScript.workspaceToCode(workspace);
+      console.log("--- 產生的程式碼 ---");
+      console.log(code);
+
+      try {
+        eval(code);
+      } catch (e) {
+        console.log("錯誤：", e);
+      }
+    }
+    document.getElementById('runBtn').addEventListener('click', runCode);
+  </script>
+</body>
+</html>
