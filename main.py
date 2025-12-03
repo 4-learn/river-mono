@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 import uvicorn
 import json
 
+from emotion_wheel import get_emotion
+from llm_service import analyze_emotion_and_respond
+
 load_dotenv()
 
 app = FastAPI()
@@ -50,19 +53,34 @@ async def wheel_endpoint(request: WheelRequest):
     print("收到 /wheel 請求:")
     print(f"  text: {request.text}")
     print(f"  position: {request.position}")
-    print(f"  position[0]: {request.position[0]}")
-    print(f"  position[1]: {request.position[1]}")
+    print(f"  current row: {request.position[0]}, col: {request.position[1]}")
     print("=" * 50)
 
-    # 回傳 fake data
+    current_row = request.position[0]
+    current_col = request.position[1]
+
+    # 使用 LLM 分析情感並生成回應
+    llm_result = analyze_emotion_and_respond(request.text, current_row, current_col)
+
+    new_row = llm_result["target_row"]
+    new_col = llm_result["target_col"]
+
+    # 取得新位置的情感資訊
+    emotion_info = get_emotion(new_row, new_col)
+
+    print(f"  LLM 分析結果: {llm_result['detected_emotion']}")
+    print(f"  新位置: ({new_row}, {new_col}) - {emotion_info['name']}")
+    print(f"  顏色: {emotion_info['color']}")
+    print("=" * 50)
+
     return {
         "led_position": {
-            "row": 2,
-            "col": 4
+            "row": new_row,
+            "col": new_col
         },
-        "color": "#FF0000",
-        "sentiment": "positive",
-        "text": request.text
+        "color": emotion_info["color"],
+        "sentiment": emotion_info["name"],
+        "text": llm_result["response_text"]
     }
 
 
