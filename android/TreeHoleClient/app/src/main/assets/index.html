@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>River 河流客戶端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .settings {
+            margin-bottom: 25px;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        select option {
+            background: #333;
+            color: white;
+        }
+
+        .record-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .record-btn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 60px;
+        }
+
+        .response-section {
+            margin: 20px 0;
+        }
+
+        .response-text {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .play-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(116, 185, 255, 0.4);
+        }
+
+        .icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🌳 River 河流客戶端</h1>
+
+    <div class="settings">
+        <div class="setting-group">
+            <label for="server">服務器地址：</label>
+            <input type="url" id="server" value="https://river.4impact.cc" placeholder="輸入服務器URL">
+        </div>
+
+        <div class="setting-group">
+            <label for="mode">模式：</label>
+            <select id="mode">
+                <option value="fast">快速模式</option>
+                <option value="full">完整模式</option>
+            </select>
+        </div>
+
+        <button id="testBtn" style="width: 100%; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 10px; margin-top: 10px;">
+            測試連接
+        </button>
+    </div>
+
+    <div class="record-section">
+        <button class="record-btn" id="recordBtn">
+            <div class="icon">🎤</div>
+            <div>按住說話</div>
+        </button>
+    </div>
+
+    <div class="status" id="status">
+        👋 請按住錄音按鈕開始對話
+    </div>
+
+    <div class="status" id="debugInfo" style="font-size: 12px; background: rgba(0,0,0,0.8); color: #fff; max-height: 120px; overflow-y: auto; white-space: pre-wrap;">
+        🔧 除錯信息將顯示在這裡
+    </div>
+
+    <div class="response-section" id="responseSection" style="display: none;">
+        <div class="response-text">
+            <strong>🗣️ 您說：</strong>
+            <div id="userText"></div>
+        </div>
+
+        <div class="response-text">
+            <strong>🤖 AI 回應：</strong>
+            <div id="aiResponse"></div>
+        </div>
+
+        <button class="play-btn" id="playBtn" style="display: none;">
+            🔊 播放語音回應
+        </button>
+    </div>
+</div>
+
+<script>
+    class TreeHoleApp {
+        constructor() {
+            this.mediaRecorder = null;
+            this.audioChunks = [];
+            this.isRecording = false;
+            this.currentAudioBlob = null;
+
+            this.initElements();
+            this.bindEvents();
+
+            console.log('TreeHoleApp 初始化完成');
+        }
+
+        async testConnection() {
+          const debug = this.debugInfo;
+          const server = this.serverInput.value.replace(/\/+$/, '');
+          try {
+            const r = await fetch(`${server}/healthz`, { method: 'GET', mode: 'cors', credentials: 'omit' });
+            const t = await r.text();
+            debug.innerHTML = `✅ /healthz ${r.status}: ${t}`;
+            console.log('healthz:', r.status, t);
+          } catch (e) {
+            debug.innerHTML = `❌ healthz 失敗：${e}`;
+            console.error(e);
+          }
+        }
+
+        initElements() {
+            this.recordBtn = document.getElementById('recordBtn');
+            this.status = document.getElementById('status');
+            this.debugInfo = document.getElementById('debugInfo');
+            this.serverInput = document.getElementById('server');
+            this.modeSelect = document.getElementById('mode');
+            this.testBtn = document.getElementById('testBtn');
+            this.responseSection = document.getElementById('responseSection');
+            this.userText = document.getElementById('userText');
+            this.aiResponse = document.getElementById('aiResponse');
+            this.playBtn = document.getElementById('playBtn');
+
+            console.log('元素初始化完成');
+            this.debugInfo.innerHTML = '✅ 元素初始化完成';
+        }
+
+        bindEvents() {
+            this.recordBtn.addEventListener('mousedown', (e) => {
+                console.log('按下錄音按鈕');
+                this.debugInfo.innerHTML = '🔴 按下錄音按鈕';
+                this.startRecording();
+            });
+
+            this.recordBtn.addEventListener('mouseup', (e) => {
+                console.log('鬆開錄音按鈕');
+                this.stopRecording();
+            });
+
+            this.recordBtn.addEventListener('mouseleave', (e) => {
+                this.stopRecording();
+            });
+
+            this.recordBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                console.log('觸摸開始錄音');
+                this.startRecording();
+            });
+
+            this.recordBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                console.log('觸摸結束錄音');
+                this.stopRecording();
+            });
+
+            this.playBtn.addEventListener('click', () => {
+                console.log('點擊播放按鈕');
+                this.playAudio();
+            });
+
+            this.testBtn.addEventListener('click', () => {
+                console.log('測試連接');
+                this.testConnection();
+            });
+
+            console.log('事件綁定完成');
+        }
+
+        async startRecording() {
+          if (this.isRecording) return;
+
+          try {
+            console.log('開始請求麥克風權限');
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                channelCount: 1,
+                echoCancellation: true,
+                noiseSuppression: true
+              }
+            });
+
+            console.log('麥克風權限獲取成功');
+
+            let options = { mimeType: 'audio/webm;codecs=opus' };
+            if (!MediaRecorder.isTypeSupported || !MediaRecorder.isTypeSupported(options.mimeType)) {
+              console.warn('webm/opus 不支援，退回預設 mimeType');
+              options = {};
+            }
+
+            this.mediaRecorder = new MediaRecorder(stream, options);
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+              if (event.data && event.data.size > 0) {
+                console.log('錄音數據可用:', event.data.size, 'bytes');
+                this.audioChunks.push(event.data);
+              }
+            };
+
+            this.mediaRecorder.onstop = () => {
+              console.log('錄音停止');
+              stream.getTracks().forEach(track => track.stop());
+              this.processAudio();
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+
+            this.recordBtn.classList.add('recording');
+            this.recordBtn.innerHTML = '<div class="icon">🔴</div><div>錄音中...</div>';
+            this.status.innerHTML = '🎙️ 正在錄音，鬆開停止...';
+          } catch (error) {
+            console.error('錄音失敗:', error);
+            this.status.innerHTML = '❌ 無法訪問麥克風，請檢查權限設置';
+            this.debugInfo.innerHTML = `❌ 錄音錯誤: ${error.message}`;
+          }
+        }
+
+        stopRecording() {
+            if (!this.isRecording || !this.mediaRecorder) {
+                return;
+            }
+
+            console.log('停止錄音');
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+
+            this.recordBtn.classList.remove('recording');
+            this.recordBtn.innerHTML = '<div class="icon">🎤</div><div>按住說話</div>';
+            this.status.innerHTML = '⏳ 處理中，請稍候...';
+        }
+
+        // 新增：簡單的 log 函數（最新在上方）
+        addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            const current = this.debugInfo.innerHTML;
+
+            if (current.includes('🔧 除錯信息將顯示在這裡')) {
+                this.debugInfo.innerHTML = logEntry;
+            } else {
+                this.debugInfo.innerHTML = logEntry + '<br>' + current;
+            }
+        }
+
+        async processAudio() {
+          if (this.audioChunks.length === 0) {
+            this.status.innerHTML = '❌ 沒有錄制到音頻，請重試';
+            return;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 120));
+
+          const audioType = (this.audioChunks[0] && this.audioChunks[0].type) || 'audio/webm';
+          const audioBlob = new Blob(this.audioChunks, { type: audioType });
+
+          console.log('音頻 Blob 大小:', audioBlob.size, 'bytes, 類型:', audioBlob.type);
+          this.addLog(`🎧 錄到音：${audioBlob.size} bytes`);
+
+          if (audioBlob.size < 1200) {
+            this.status.innerHTML = '❌ 錄音太短或無聲，請至少說 1–2 秒';
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'recording.webm');
+
+          try {
+            const server = this.serverInput.value.replace(/\/+$/, '');
+            const mode = this.modeSelect.value;
+
+            if (mode === 'full') {
+              await this.fullMode(server, formData);
+            } else {
+              await this.fastMode(server, formData);
+            }
+          } catch (error) {
+            console.error('處理錯誤:', error);
+            this.status.innerHTML = `❌ 處理失敗: ${error.message}`;
+            this.addLog(`❌ 處理錯誤: ${error.message}`);
+          }
+        }
+
+        async fullMode(server, formData) {
+            this.status.innerHTML = '🔄 發送到服務器處理中...<div class="loading"></div>';
+
+            try {
+                console.log('完整模式請求:', `${server}/dialogue`);
+
+                const response = await fetch(`${server}/dialogue`, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+
+                console.log('服務器回應狀態:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`服務器錯誤: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('服務器回應數據:', data);
+
+                this.displayResult(data);
+
+                if (data.audio_wav_base64) {
+                    this.currentAudioBlob = this.base64ToBlob(data.audio_wav_base64, 'audio/wav');
+                    this.playBtn.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('完整模式錯誤:', error);
+                this.status.innerHTML = `❌ 連接失敗: ${error.message}`;
+                this.addLog(`❌ 完整模式錯誤: ${error.message}`);
+            }
+        }
+
+        async fastMode(server, formData) {
+            this.status.innerHTML = '🚀 快速模式處理中...<div class="loading"></div>';
+            this.addLog(`🔧 連接: ${server}/dialogue_fast`);
+
+            try {
+                console.log('快速模式請求:', `${server}/dialogue_fast`);
+
+                const response = await fetch(`${server}/dialogue_fast`, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors',
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                console.log('服務器回應狀態:', response.status);
+                this.addLog(`🔧 回應: ${response.status}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`服務器錯誤: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('快速模式回應:', data);
+                this.addLog(`🔧 job_id: ${data.job_id || 'none'}`);
+
+                this.displayResult(data);
+
+                if (data.job_id) {
+                    console.log('開始輪詢音檔，job_id:', data.job_id);
+                    this.status.innerHTML = '🎧 等待音檔生成...<div class="loading"></div>';
+                    await this.waitForAudio(server, data.job_id);
+                } else {
+                    console.error('沒有收到 job_id');
+                    this.addLog(`❌ 沒有收到 job_id`);
+                    this.status.innerHTML = '❌ 沒有收到音檔任務 ID';
+                }
+            } catch (error) {
+                console.error('快速模式錯誤:', error);
+                this.status.innerHTML = `❌ 連接失敗: ${error.message}`;
+                this.addLog(`❌ 錯誤: ${error.message}`);
+            }
+        }
+
+        async waitForAudio(server, jobId) {
+            const url = `${server}/audio/${jobId}`;
+            const startTime = Date.now();
+            let attempts = 0;
+
+            this.addLog(`🔄 輪詢: ${jobId}`);
+
+            while (attempts < 60) {
+                try {
+                    attempts++;
+                    if (attempts % 10 === 1) {
+                        this.addLog(`📡 輪詢第 ${attempts} 次`);
+                    }
+
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        mode: 'cors',
+                        credentials: 'omit'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.ready && data.audio_wav_base64) {
+                        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                        this.status.innerHTML = `✅ 音檔就緒！用時 ${elapsed}秒`;
+                        this.addLog(`✅ 音檔就緒 ${elapsed}s`);
+
+                        try {
+                            this.currentAudioBlob = this.base64ToBlob(data.audio_wav_base64, 'audio/wav');
+                            this.addLog(`💾 Blob: ${this.currentAudioBlob.size}B`);
+                        } catch (e) {
+                            this.addLog(`❌ Blob轉換失敗: ${e.message}`);
+                            break;
+                        }
+
+                        this.playBtn.style.display = 'block';
+                        this.addLog(`🎵 播放按鈕已顯示`);
+
+                        break;
+                    } else if (data.ready && data.error) {
+                        this.status.innerHTML = `❌ 音檔生成失敗: ${data.error}`;
+                        this.addLog(`❌ TTS錯誤: ${data.error}`);
+                        break;
+                    } else if (data.ready && !data.audio_wav_base64) {
+                        this.addLog(`⚠️ TTS完成但沒音檔`);
+                        this.status.innerHTML = '⚠️ TTS 完成但沒有音檔';
+                        break;
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 250));
+
+                } catch (error) {
+                    this.addLog(`❌ 輪詢${attempts}次失敗: ${error.message}`);
+
+                    if (attempts >= 5) {
+                        this.status.innerHTML = `❌ 獲取音檔失敗: ${error.message}`;
+                        break;
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
+            if (attempts >= 60) {
+                this.status.innerHTML = '❌ 音檔等待超時';
+                this.addLog('⏰ 音檔等待超時');
+            }
+        }
+
+        displayResult(data) {
+            this.userText.textContent = data.text || '(無法識別語音)';
+            this.aiResponse.textContent = data.response || '(無回應)';
+
+            // 處理情感和顏色變化
+            if (data.emotion && data.rgb) {
+                console.log(`情感：${data.emotion}, RGB：[${data.rgb.join(', ')}]`);
+                this.applyEmotionColor(data.emotion, data.rgb);
+                this.addLog(`😊 ${data.emotion} RGB(${data.rgb.join(',')})`);
+            }
+
+            if (data.timings) {
+                const timings = typeof data.timings === 'string' ? data.timings : JSON.stringify(data.timings);
+                console.log('處理時間:', timings);
+            }
+
+            this.responseSection.style.display = 'block';
+
+            if (this.modeSelect.value === 'full') {
+                this.status.innerHTML = '✅ 處理完成';
+            }
+        }
+
+        applyEmotionColor(emotion, rgb) {
+            try {
+                const [r, g, b] = rgb;
+                const rgbColor = `rgb(${r}, ${g}, ${b})`;
+
+                // 計算對比色（前景文字用）
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                const textColor = brightness > 128 ? 'rgb(20, 20, 20)' : 'rgb(255, 255, 255)';
+
+                // 背景用淡化版本
+                const bgLight = `rgba(${r}, ${g}, ${b}, 0.2)`;
+                const bgMedium = `rgba(${r}, ${g}, ${b}, 0.4)`;
+                const bgStrong = `rgba(${r}, ${g}, ${b}, 0.7)`;
+
+                // 1. 整個 body 背景（淡化，避免干擾文字）
+                document.body.style.transition = 'background 1s ease';
+                document.body.style.background = `
+                    radial-gradient(circle at center,
+                        ${bgLight} 0%,
+                        ${bgMedium} 50%,
+                        rgba(${Math.max(0, r-80)}, ${Math.max(0, g-80)}, ${Math.max(0, b-80)}, 0.6) 100%)
+                `;
+
+                // 2. Container 保持良好可讀性
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.transition = 'background 1s ease, box-shadow 1s ease, border 1s ease';
+                    container.style.background = `
+                        linear-gradient(135deg,
+                            rgba(255, 255, 255, 0.9) 0%,
+                            rgba(255, 255, 255, 0.85) 50%,
+                            rgba(255, 255, 255, 0.8) 100%)
+                    `;
+                    container.style.boxShadow = `
+                        0 8px 32px ${bgStrong},
+                        0 0 0 3px ${rgbColor}
+                    `;
+                    container.style.border = `2px solid ${rgbColor}`;
+                    container.style.color = '#333';
+                }
+
+                // 3. AI 回應區塊
+                const aiResponseDiv = this.aiResponse.parentElement;
+                if (aiResponseDiv) {
+                    aiResponseDiv.style.transition = 'all 1s ease';
+                    aiResponseDiv.style.border = `4px solid ${rgbColor}`;
+                    aiResponseDiv.style.boxShadow = `0 0 20px ${bgStrong}`;
+                    aiResponseDiv.style.background = `rgba(255, 255, 255, 0.95)`;
+                    aiResponseDiv.style.color = '#222';
+                }
+
+                // 4. 用戶說話區塊
+                const userResponseDiv = this.userText.parentElement;
+                if (userResponseDiv) {
+                    userResponseDiv.style.transition = 'all 1s ease';
+                    userResponseDiv.style.border = `2px solid ${rgbColor}`;
+                    userResponseDiv.style.boxShadow = `0 0 10px ${bgMedium}`;
+                    userResponseDiv.style.background = `rgba(255, 255, 255, 0.9)`;
+                    userResponseDiv.style.color = '#222';
+                }
+
+                // 5. 錄音按鈕
+                const recordBtn = this.recordBtn;
+                if (recordBtn && !recordBtn.classList.contains('recording')) {
+                    recordBtn.style.transition = 'background 1s ease, box-shadow 1s ease, color 1s ease';
+                    recordBtn.style.background = `linear-gradient(45deg, ${rgbColor}, ${bgStrong})`;
+                    recordBtn.style.boxShadow = `0 4px 20px ${bgStrong}`;
+                    recordBtn.style.color = textColor;
+                }
+
+                // 6. 播放按鈕
+                const playBtn = this.playBtn;
+                if (playBtn && playBtn.style.display !== 'none') {
+                    playBtn.style.transition = 'background 1s ease, color 1s ease';
+                    playBtn.style.background = `linear-gradient(45deg, ${rgbColor}, ${bgStrong})`;
+                    playBtn.style.color = textColor;
+                }
+
+                // 7. 輸入框
+                const inputs = document.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    input.style.transition = 'background 1s ease, border 1s ease, color 1s ease';
+                    input.style.background = `rgba(255, 255, 255, 0.9)`;
+                    input.style.border = `2px solid ${rgbColor}`;
+                    input.style.color = '#333';
+                });
+
+                // 8. 測試連接按鈕
+                const testBtn = this.testBtn;
+                if (testBtn) {
+                    testBtn.style.transition = 'background 1s ease, color 1s ease';
+                    testBtn.style.background = rgbColor;
+                    testBtn.style.color = textColor;
+                }
+
+                // 9. Status 區域
+                const status = this.status;
+                if (status) {
+                    status.style.transition = 'background 1s ease, border 1s ease, color 1s ease';
+                    status.style.background = `rgba(255, 255, 255, 0.85)`;
+                    status.style.border = `1px solid ${rgbColor}`;
+                    status.style.color = '#333';
+                }
+
+                console.log(`🎨 變色完成：${emotion} -> ${rgbColor}`);
+            } catch (error) {
+                console.error('應用情感色彩失敗:', error);
+            }
+        }
+
+        base64ToBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
+        }
+
+        playAudio() {
+            if (!this.currentAudioBlob) {
+                this.addLog('❌ 沒有音檔');
+                this.status.innerHTML = '❌ 沒有音檔可播放，請重新錄音';
+                return;
+            }
+
+            if (this.currentAudioBlob.size === 0) {
+                this.addLog('❌ 音檔空的');
+                this.status.innerHTML = '❌ 音檔是空的，請重新錄音';
+                return;
+            }
+
+            this.addLog(`🔊 播放: ${this.currentAudioBlob.size}B`);
+
+            const url = URL.createObjectURL(this.currentAudioBlob);
+            const audio = new Audio(url);
+            audio.volume = 1.0;
+
+            audio.onloadeddata = () => {
+                this.addLog(`時長: ${audio.duration?.toFixed(1) || '?'}s`);
+                this.status.innerHTML = '🔊 正在播放語音回應...';
+            };
+
+            audio.onended = () => {
+                URL.revokeObjectURL(url);
+                this.addLog('✅ 播放完成');
+                this.status.innerHTML = '✅ 播放完成';
+            };
+
+            audio.onerror = (error) => {
+                this.addLog(`❌ 播放失敗: ${audio.error?.code || 'unknown'}`);
+                this.status.innerHTML = '❌ 音頻播放失敗，請檢查設備音量';
+                URL.revokeObjectURL(url);
+            };
+
+            audio.play().then(() => {
+                this.status.innerHTML = '🔊 正在播放語音回應...';
+            }).catch((error) => {
+                this.addLog(`❌ play() 失敗: ${error.message}`);
+                this.status.innerHTML = `❌ 播放失敗: ${error.message}`;
+                URL.revokeObjectURL(url);
+            });
+        }
+    }
+
+    // 初始化應用
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM 載入完成，初始化應用');
+        new TreeHoleApp();
+    });
+</script>
+</body>
+</html>
