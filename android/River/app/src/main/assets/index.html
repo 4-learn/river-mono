@@ -281,40 +281,40 @@
             <circle cx="150" cy="150" r="145" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
             <circle cx="150" cy="150" r="140" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" stroke-dasharray="4,4"/>
 
-            <!-- 8個情緒扇形 - 外層(強) -->
+            <!-- 8片花瓣 - 外層(強) 使用貝塞爾曲線 -->
             <g id="outer-petals" class="petal-layer">
-                <path class="petal" data-emotion="joy" d="M150,150 L150,20 A130,130 0 0,1 241.9,58.1 Z" fill="url(#grad-joy)" opacity="0.7"/>
-                <path class="petal" data-emotion="trust" d="M150,150 L241.9,58.1 A130,130 0 0,1 280,150 Z" fill="url(#grad-trust)" opacity="0.7"/>
-                <path class="petal" data-emotion="fear" d="M150,150 L280,150 A130,130 0 0,1 241.9,241.9 Z" fill="url(#grad-fear)" opacity="0.7"/>
-                <path class="petal" data-emotion="surprise" d="M150,150 L241.9,241.9 A130,130 0 0,1 150,280 Z" fill="url(#grad-surprise)" opacity="0.7"/>
-                <path class="petal" data-emotion="sadness" d="M150,150 L150,280 A130,130 0 0,1 58.1,241.9 Z" fill="url(#grad-sadness)" opacity="0.7"/>
-                <path class="petal" data-emotion="disgust" d="M150,150 L58.1,241.9 A130,130 0 0,1 20,150 Z" fill="url(#grad-disgust)" opacity="0.7"/>
-                <path class="petal" data-emotion="anger" d="M150,150 L20,150 A130,130 0 0,1 58.1,58.1 Z" fill="url(#grad-anger)" opacity="0.7"/>
-                <path class="petal" data-emotion="anticipation" d="M150,150 L58.1,58.1 A130,130 0 0,1 150,20 Z" fill="url(#grad-anticipation)" opacity="0.7"/>
+                <path class="petal" data-emotion="joy" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-joy)" opacity="0.75"/>
+                <path class="petal" data-emotion="trust" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-trust)" opacity="0.75" transform="rotate(45,150,150)"/>
+                <path class="petal" data-emotion="fear" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-fear)" opacity="0.75" transform="rotate(90,150,150)"/>
+                <path class="petal" data-emotion="surprise" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-surprise)" opacity="0.75" transform="rotate(135,150,150)"/>
+                <path class="petal" data-emotion="sadness" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-sadness)" opacity="0.75" transform="rotate(180,150,150)"/>
+                <path class="petal" data-emotion="disgust" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-disgust)" opacity="0.75" transform="rotate(225,150,150)"/>
+                <path class="petal" data-emotion="anger" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-anger)" opacity="0.75" transform="rotate(270,150,150)"/>
+                <path class="petal" data-emotion="anticipation" d="M150,150 Q120,80 150,15 Q180,80 150,150" fill="url(#grad-anticipation)" opacity="0.75" transform="rotate(315,150,150)"/>
             </g>
 
-            <!-- 中層 -->
+            <!-- 中層花瓣 -->
             <g id="middle-petals" class="petal-layer">
-                <path class="petal" data-emotion="joy" d="M150,150 L150,55 A95,95 0 0,1 217.2,82.8 Z" fill="url(#grad-joy)" opacity="0.5"/>
-                <path class="petal" data-emotion="trust" d="M150,150 L217.2,82.8 A95,95 0 0,1 245,150 Z" fill="url(#grad-trust)" opacity="0.5"/>
-                <path class="petal" data-emotion="fear" d="M150,150 L245,150 A95,95 0 0,1 217.2,217.2 Z" fill="url(#grad-fear)" opacity="0.5"/>
-                <path class="petal" data-emotion="surprise" d="M150,150 L217.2,217.2 A95,95 0 0,1 150,245 Z" fill="url(#grad-surprise)" opacity="0.5"/>
-                <path class="petal" data-emotion="sadness" d="M150,150 L150,245 A95,95 0 0,1 82.8,217.2 Z" fill="url(#grad-sadness)" opacity="0.5"/>
-                <path class="petal" data-emotion="disgust" d="M150,150 L82.8,217.2 A95,95 0 0,1 55,150 Z" fill="url(#grad-disgust)" opacity="0.5"/>
-                <path class="petal" data-emotion="anger" d="M150,150 L55,150 A95,95 0 0,1 82.8,82.8 Z" fill="url(#grad-anger)" opacity="0.5"/>
-                <path class="petal" data-emotion="anticipation" d="M150,150 L82.8,82.8 A95,95 0 0,1 150,55 Z" fill="url(#grad-anticipation)" opacity="0.5"/>
+                <path class="petal" data-emotion="joy" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-joy)" opacity="0.55"/>
+                <path class="petal" data-emotion="trust" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-trust)" opacity="0.55" transform="rotate(45,150,150)"/>
+                <path class="petal" data-emotion="fear" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-fear)" opacity="0.55" transform="rotate(90,150,150)"/>
+                <path class="petal" data-emotion="surprise" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-surprise)" opacity="0.55" transform="rotate(135,150,150)"/>
+                <path class="petal" data-emotion="sadness" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-sadness)" opacity="0.55" transform="rotate(180,150,150)"/>
+                <path class="petal" data-emotion="disgust" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-disgust)" opacity="0.55" transform="rotate(225,150,150)"/>
+                <path class="petal" data-emotion="anger" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-anger)" opacity="0.55" transform="rotate(270,150,150)"/>
+                <path class="petal" data-emotion="anticipation" d="M150,150 Q125,95 150,45 Q175,95 150,150" fill="url(#grad-anticipation)" opacity="0.55" transform="rotate(315,150,150)"/>
             </g>
 
-            <!-- 內層 -->
+            <!-- 內層花瓣 -->
             <g id="inner-petals" class="petal-layer">
-                <path class="petal" data-emotion="joy" d="M150,150 L150,90 A60,60 0 0,1 192.4,107.6 Z" fill="url(#grad-joy)" opacity="0.3"/>
-                <path class="petal" data-emotion="trust" d="M150,150 L192.4,107.6 A60,60 0 0,1 210,150 Z" fill="url(#grad-trust)" opacity="0.3"/>
-                <path class="petal" data-emotion="fear" d="M150,150 L210,150 A60,60 0 0,1 192.4,192.4 Z" fill="url(#grad-fear)" opacity="0.3"/>
-                <path class="petal" data-emotion="surprise" d="M150,150 L192.4,192.4 A60,60 0 0,1 150,210 Z" fill="url(#grad-surprise)" opacity="0.3"/>
-                <path class="petal" data-emotion="sadness" d="M150,150 L150,210 A60,60 0 0,1 107.6,192.4 Z" fill="url(#grad-sadness)" opacity="0.3"/>
-                <path class="petal" data-emotion="disgust" d="M150,150 L107.6,192.4 A60,60 0 0,1 90,150 Z" fill="url(#grad-disgust)" opacity="0.3"/>
-                <path class="petal" data-emotion="anger" d="M150,150 L90,150 A60,60 0 0,1 107.6,107.6 Z" fill="url(#grad-anger)" opacity="0.3"/>
-                <path class="petal" data-emotion="anticipation" d="M150,150 L107.6,107.6 A60,60 0 0,1 150,90 Z" fill="url(#grad-anticipation)" opacity="0.3"/>
+                <path class="petal" data-emotion="joy" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-joy)" opacity="0.35"/>
+                <path class="petal" data-emotion="trust" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-trust)" opacity="0.35" transform="rotate(45,150,150)"/>
+                <path class="petal" data-emotion="fear" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-fear)" opacity="0.35" transform="rotate(90,150,150)"/>
+                <path class="petal" data-emotion="surprise" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-surprise)" opacity="0.35" transform="rotate(135,150,150)"/>
+                <path class="petal" data-emotion="sadness" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-sadness)" opacity="0.35" transform="rotate(180,150,150)"/>
+                <path class="petal" data-emotion="disgust" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-disgust)" opacity="0.35" transform="rotate(225,150,150)"/>
+                <path class="petal" data-emotion="anger" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-anger)" opacity="0.35" transform="rotate(270,150,150)"/>
+                <path class="petal" data-emotion="anticipation" d="M150,150 Q135,115 150,80 Q165,115 150,150" fill="url(#grad-anticipation)" opacity="0.35" transform="rotate(315,150,150)"/>
             </g>
 
             <!-- 裝飾性同心圓 -->
