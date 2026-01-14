@@ -1,201 +1,169 @@
 import os
 import time
+import json
 import logging
 import tempfile
-import threading
 from typing import Optional
 from dotenv import load_dotenv
+import requests
+import websocket
 
-load_dotenv()  # 載入 .env 檔案
+load_dotenv()
 
 logger = logging.getLogger("uvicorn")
 
-# ASR 參數配置
-ASR_MAX_WAIT = float(os.getenv("ASR_MAX_WAIT", "12.0"))
-ASR_STABILITY_GAP = float(os.getenv("ASR_STABILITY_GAP", "0.5"))
-FIRST_CB_WAIT = float(os.getenv("ASR_FIRST_CB_WAIT", "2.0"))
-GRACE_TAIL = float(os.getenv("ASR_GRACE_TAIL", "0.8"))
+ASR_MAX_WAIT = float(os.getenv("ASR_MAX_WAIT", "15.0"))
 YATING_API_KEY = os.getenv("YATING_API_KEY", "").strip()
 
-def yating_asr_from_wav16k(wav16k_bytes: bytes, max_wait: float = ASR_MAX_WAIT) -> Optional[str]:
-    """
-    使用 Yating ASR SDK 進行語音辨識
+YATING_TOKEN_URL = "https://asr.api.yating.tw/v1/token"
+YATING_WS_URL = "wss://asr.api.yating.tw/ws/v1/"
 
-    Args:
-        wav16k_bytes: 16kHz mono WAV 音檔
-        max_wait: 最長等待時間（秒）
 
-    Returns:
-        辨識出的文字，失敗則返回 None
-    """
-    logger.info(f"[ASR] 開始辨識，音檔大小: {len(wav16k_bytes)} bytes ({len(wav16k_bytes)/1024:.2f} KB)")
-
+def yating_asr_from_wav16k(wav16k_bytes: bytes, pipeline: str = "asr-zh-tw-std", max_wait: float = ASR_MAX_WAIT) -> Optional[str]:
+    """使用 Yating ASR (直接 WebSocket) 進行語音辨識"""
+    logger.info(f"[ASR-Yating] 開始辨識，音檔: {len(wav16k_bytes)} bytes, pipeline: {pipeline}")
+    
     if not YATING_API_KEY:
-        logger.error("[ASR] YATING_API_KEY is empty")
+        logger.error("[ASR-Yating] YATING_API_KEY is empty")
         return None
-
+    
+    # (1) 取得 Token
     try:
-        from ailabs_asr.streaming import StreamingClient
+        resp = requests.post(
+            YATING_TOKEN_URL,
+            json={"pipeline": pipeline},
+            headers={"key": YATING_API_KEY},
+            timeout=10
+        )
+        if resp.status_code != 201:
+            logger.error(f"[ASR-Yating] Token API failed: {resp.status_code} {resp.text}")
+            return None
+        token = resp.json().get("auth_token", "")
+        logger.info(f"[ASR-Yating] Got token: {token[:8]}...")
     except Exception as e:
-        logger.error(f"[ASR] SDK not available: {e}")
+        logger.error(f"[ASR-Yating] Token API error: {e}")
         return None
-
-    # 寫入臨時檔案
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-        f.write(wav16k_bytes)
-        f.flush()
-        tmp_path = f.name
-
-    state = {
-        "result": None,
-        "done": False,
-        "last_update": time.time(),
-        "error": None,
-        "got_any_callback": False
-    }
-    first_cb = threading.Event()
-
-    def on_processing_sentence(msg):
-        text = (msg.get("asr_sentence") or "").strip()
-        state["got_any_callback"] = True
-        first_cb.set()
-        if text and (not state["result"] or len(text) > len(state["result"])):
-            state["result"] = text
-        state["last_update"] = time.time()
-        logger.info(f"[ASR] partial='{text}'")
-
-    def on_final_sentence(msg):
-        text = (msg.get("asr_sentence") or "").strip()
-        state["got_any_callback"] = True
-        first_cb.set()
-        if text:
-            state["result"] = text
-        state["done"] = True
-        state["last_update"] = time.time()
-        logger.info(f"[ASR] final='{text}'")
-
-    def worker():
-        try:
-            logger.info("[ASR] 建立 Yating StreamingClient...")
-            cli = StreamingClient(key=YATING_API_KEY)
-            logger.info(f"[ASR] 開始串流辨識，檔案: {tmp_path}")
-            cli.start_streaming_wav(
-                pipeline="asr-zh-tw-std",
-                file=tmp_path,
-                on_processing_sentence=on_processing_sentence,
-                on_final_sentence=on_final_sentence
-            )
-            logger.info("[ASR] 串流辨識完成")
-        except Exception as e:
-            state["error"] = e
-            logger.error(f"[ASR] Worker error: {e}", exc_info=True)
-        finally:
-            try:
-                os.unlink(tmp_path)
-            except:
-                pass
-
+    
+    # (2) 同步 WebSocket
     t0 = time.time()
-    th = threading.Thread(target=worker, daemon=True)
-    th.start()
-
-    # 等待首次回呼
-    first_cb.wait(timeout=FIRST_CB_WAIT)
-
-    # 主迴圈：優先等待 done，只在超時時才早停
-    while True:
-        now = time.time()
-
-        # 優先：等待 final callback
-        if state["done"]:
-            logger.info(f"[ASR] Final result after {now - t0:.2f}s")
-            break
-
-        # 只在接近超時時才考慮早停
-        if (now - t0) > (max_wait * 0.8):  # 80% 超時時間後才檢查早停
-            if state["result"] and (now - state["last_update"]) > ASR_STABILITY_GAP:
-                logger.warning(f"[ASR] Early stop after {now - t0:.2f}s (approaching timeout, stable {ASR_STABILITY_GAP}s)")
-                break
-
-        # 絕對超時
-        if (now - t0) > max_wait:
-            logger.warning(f"[ASR] Timeout after {max_wait}s, grace period {GRACE_TAIL}s")
-            end = now + GRACE_TAIL
-            while time.time() < end:
-                if state["done"]:
+    ws_url = f"{YATING_WS_URL}?token={token}"
+    result = None
+    
+    try:
+        ws = websocket.create_connection(ws_url, timeout=max_wait)
+        logger.info("[ASR-Yating] WS connected")
+        
+        # 等待 session_started
+        msg = ws.recv()
+        data = json.loads(msg)
+        logger.info(f"[ASR-Yating] recv: {data}")
+        
+        if data.get("message_type") != "session_started":
+            logger.error(f"[ASR-Yating] Expected session_started, got: {data}")
+            ws.close()
+            return None
+        
+        # 發送 raw PCM（跳過 44 bytes WAV header）
+        audio_data = wav16k_bytes[44:] if len(wav16k_bytes) > 44 else wav16k_bytes
+        
+        # 分塊發送 (每塊 3200 bytes = 100ms @ 16kHz mono 16bit)
+        chunk_size = 3200
+        for i in range(0, len(audio_data), chunk_size):
+            chunk = audio_data[i:i+chunk_size]
+            ws.send_binary(chunk)
+            time.sleep(0.05)
+        
+        logger.info(f"[ASR-Yating] Sent {len(audio_data)} PCM bytes")
+        
+        # 發送空 binary 作為 EOF（跟 SDK 一樣）
+        ws.send_binary(b'')
+        logger.info("[ASR-Yating] Sent EOF (empty binary)")
+        
+        # 接收結果
+        while (time.time() - t0) < max_wait:
+            try:
+                ws.settimeout(2.0)
+                msg = ws.recv()
+                data = json.loads(msg)
+                logger.info(f"[ASR-Yating] recv: {data}")
+                
+                # 結果在 pipe.asr_sentence
+                if 'pipe' in data:
+                    pipe = data['pipe']
+                    if 'asr_sentence' in pipe:
+                        result = pipe['asr_sentence']
+                        logger.info(f"[ASR-Yating] Got sentence: '{result}'")
+                    
+                    # 檢查是否最終結果
+                    if pipe.get('asr_final'):
+                        logger.info("[ASR-Yating] Got final")
+                        break
+                    
+                    # 檢查 EOF
+                    if pipe.get('asr_eof'):
+                        logger.info("[ASR-Yating] Got EOF")
+                        break
+                        
+            except websocket.WebSocketTimeoutException:
+                if result:
+                    logger.info("[ASR-Yating] Timeout but have result")
                     break
-                time.sleep(0.05)
-            break
-
-        time.sleep(0.05)
-
+                continue
+            except Exception as e:
+                logger.warning(f"[ASR-Yating] Recv error: {e}")
+                break
+        
+        ws.close()
+        
+    except Exception as e:
+        logger.error(f"[ASR-Yating] WS error: {e}")
+        return None
+    
     took = time.time() - t0
-    final_result = (state["result"] or "").strip() or None
-    logger.info(f"[ASR] Took {took:.3f}s, result={bool(state['result'])}, done={state['done']}")
-    logger.info(f"[ASR] 辨識結果: '{final_result}'")
+    final_result = (result or "").strip() or None
+    logger.info(f"[ASR-Yating] Took {took:.2f}s, result: '{final_result}'")
     return final_result
 
 
 def asr_fallback_openai(wav16k_bytes: bytes) -> Optional[str]:
-    """
-    使用 OpenAI Whisper 作為備援 ASR
-
-    Args:
-        wav16k_bytes: 16kHz mono WAV 音檔
-
-    Returns:
-        辨識出的文字，失敗則返回 None
-    """
+    """使用 OpenAI Whisper 作為備援 ASR"""
     try:
         from openai import OpenAI
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key:
-            logger.warning("[ASR-FB] No OpenAI API key")
+            logger.warning("[ASR-OpenAI] No API key")
             return None
-
         client = OpenAI(api_key=api_key)
     except Exception as e:
-        logger.error(f"[ASR-FB] OpenAI init failed: {e}")
+        logger.error(f"[ASR-OpenAI] Init failed: {e}")
         return None
-
+    
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
         f.write(wav16k_bytes)
         f.flush()
         path = f.name
-
+    
     try:
-        # 嘗試 gpt-4o-transcribe
         try:
             with open(path, "rb") as fh:
-                resp = client.audio.transcriptions.create(
-                    model="gpt-4o-transcribe",
-                    file=fh
-                )
+                resp = client.audio.transcriptions.create(model="gpt-4o-transcribe", file=fh)
             text = (resp.text or "").strip()
             if text:
-                logger.info(f"[ASR-FB] gpt-4o-transcribe 辨識結果: '{text}'")
+                logger.info(f"[ASR-OpenAI] gpt-4o-transcribe: '{text}'")
                 return text
-            else:
-                logger.warning("[ASR-FB] gpt-4o-transcribe returned empty text")
         except Exception as e:
-            logger.warning(f"[ASR-FB] gpt-4o-transcribe failed: {e}")
-
-        # 嘗試 whisper-1
+            logger.warning(f"[ASR-OpenAI] gpt-4o-transcribe failed: {e}")
+        
         try:
             with open(path, "rb") as fh:
-                resp = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=fh
-                )
+                resp = client.audio.transcriptions.create(model="whisper-1", file=fh)
             text = (resp.text or "").strip()
             if text:
-                logger.info(f"[ASR-FB] whisper-1 辨識結果: '{text}'")
+                logger.info(f"[ASR-OpenAI] whisper-1: '{text}'")
                 return text
-            else:
-                logger.warning("[ASR-FB] whisper-1 returned empty text")
         except Exception as e:
-            logger.warning(f"[ASR-FB] whisper-1 failed: {e}")
-
+            logger.warning(f"[ASR-OpenAI] whisper-1 failed: {e}")
+        
         return None
     finally:
         try:

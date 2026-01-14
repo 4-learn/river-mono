@@ -237,11 +237,11 @@ async def dialogue(file: UploadFile = File(...)):
         wav16k = ffmpeg_to_wav16k_mono(raw_audio)
         t1 = time.time()
 
-        # (2) ASR 語音辨識 - 優先使用 OpenAI Whisper
-        text = asr_fallback_openai(wav16k) or ""
+        # (2) ASR 語音辨識 - 優先使用 Yating
+        text = yating_asr_from_wav16k(wav16k) or ""
         if not text:
-            print("[ASR] OpenAI failed, trying Yating fallback...")
-            text = yating_asr_from_wav16k(wav16k) or ""
+            print("[ASR] Yating failed, trying OpenAI fallback...")
+            text = asr_fallback_openai(wav16k) or ""
         t2 = time.time()
 
         if not text:
@@ -330,10 +330,11 @@ async def dialogue_fast(background_tasks: BackgroundTasks, file: UploadFile = Fi
         wav16k = ffmpeg_to_wav16k_mono(raw_audio)
         t1 = time.time()
 
-        # (2) ASR - 優先使用 OpenAI Whisper
-        text = asr_fallback_openai(wav16k) or ""
+        # (2) ASR 語音辨識 - 優先使用 Yating
+        text = yating_asr_from_wav16k(wav16k) or ""
         if not text:
-            text = yating_asr_from_wav16k(wav16k) or ""
+            print("[ASR] Yating failed, trying OpenAI fallback...")
+            text = asr_fallback_openai(wav16k) or ""
         t2 = time.time()
 
         if not text:

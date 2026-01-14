@@ -481,11 +481,35 @@
             this.audioChunks = [];
             this.isRecording = false;
             this.currentAudioBlob = null;
+            this.mediaStream = null;  // 預先取得的麥克風串流
 
             this.initElements();
             this.bindEvents();
+            this.initMicrophone();  // 預先取得麥克風權限
 
             console.log('RiverApp 初始化完成');
+        }
+
+        // 預先取得麥克風權限，保持串流就緒
+        async initMicrophone() {
+            try {
+                console.log('預先請求麥克風權限...');
+                this.debugInfo.innerHTML = '🎤 正在取得麥克風權限...';
+
+                this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                });
+
+                console.log('麥克風已就緒');
+                this.debugInfo.innerHTML = '✅ 麥克風已就緒，按住按鈕開始說話';
+            } catch (error) {
+                console.error('麥克風權限取得失敗:', error);
+                this.debugInfo.innerHTML = `❌ 麥克風權限失敗: ${error.message}`;
+            }
         }
 
         async testConnection() {
@@ -656,16 +680,15 @@
           if (this.isRecording) return;
 
           try {
-            console.log('開始請求麥克風權限');
-            const stream = await navigator.mediaDevices.getUserMedia({
-              audio: {
-                channelCount: 1,
-                echoCancellation: true,
-                noiseSuppression: true
-              }
-            });
+            // 如果沒有預先取得的串流，重新請求
+            if (!this.mediaStream) {
+              console.log('重新請求麥克風權限');
+              this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }
+              });
+            }
 
-            console.log('麥克風權限獲取成功');
+            console.log('使用預先取得的麥克風串流');
 
             let options = { mimeType: 'audio/webm;codecs=opus' };
             if (!MediaRecorder.isTypeSupported || !MediaRecorder.isTypeSupported(options.mimeType)) {
@@ -673,7 +696,7 @@
               options = {};
             }
 
-            this.mediaRecorder = new MediaRecorder(stream, options);
+            this.mediaRecorder = new MediaRecorder(this.mediaStream, options);
             this.audioChunks = [];
 
             this.mediaRecorder.ondataavailable = (event) => {
@@ -685,7 +708,7 @@
 
             this.mediaRecorder.onstop = () => {
               console.log('錄音停止');
-              stream.getTracks().forEach(track => track.stop());
+              // 不要停止 stream，保持就緒狀態
               this.processAudio();
             };
 
