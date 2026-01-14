@@ -1,4 +1,4 @@
-package com.example.treeholeclient
+package cc.fourimpact.river
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewAssetLoader
-import com.example.treeholeclient.ui.theme.TreeHoleClientTheme
+import cc.fourimpact.river.ui.theme.RiverTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestPermissions()
-        setContent { TreeHoleClientTheme { WebViewComposable() } }
+        setContent { RiverTheme { WebViewComposable() } }
     }
 
     @Composable
@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                         javaScriptEnabled = true
                         domStorageEnabled = true
                         mediaPlaybackRequiresUserGesture = false
-                        userAgentString = "$userAgentString TreeHoleClient"
+                        userAgentString = "$userAgentString River"
                         allowFileAccess = true
                         allowContentAccess = true
                         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW

@@ -231,7 +231,7 @@
 </div>
 
 <script>
-    class TreeHoleApp {
+    class RiverApp {
         constructor() {
             this.mediaRecorder = null;
             this.audioChunks = [];
@@ -241,7 +241,7 @@
             this.initElements();
             this.bindEvents();
 
-            console.log('TreeHoleApp 初始化完成');
+            console.log('RiverApp 初始化完成');
         }
 
         async testConnection() {
@@ -780,7 +780,7 @@
     // 初始化應用
     document.addEventListener('DOMContentLoaded', () => {
         console.log('DOM 載入完成，初始化應用');
-        new TreeHoleApp();
+        new RiverApp();
     });
 </script>
 </body>

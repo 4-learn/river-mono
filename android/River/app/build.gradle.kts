@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.treeholeclient"
+    namespace = "cc.fourimpact.river"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.treeholeclient"
+        applicationId = "cc.fourimpact.river"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

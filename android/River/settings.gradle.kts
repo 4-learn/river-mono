@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TreeHoleClient"
+rootProject.name = "River"
 include(":app")

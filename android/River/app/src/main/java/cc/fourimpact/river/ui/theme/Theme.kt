@@ -1,4 +1,4 @@
-package com.example.treeholeclient.ui.theme
+package cc.fourimpact.river.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -34,7 +34,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun TreeHoleClientTheme(
+fun RiverTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

@@ -1,4 +1,4 @@
-package com.example.treeholeclient.ui.theme
+package cc.fourimpact.river.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
