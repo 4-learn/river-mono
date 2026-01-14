@@ -13,24 +13,88 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a3a4a 0%, #2d5a6b 50%, #1a3a4a 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
             color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 水面漣漪背景 */
+        .ripple-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: rippleExpand 8s ease-out infinite;
+        }
+
+        .ripple:nth-child(1) { animation-delay: 0s; }
+        .ripple:nth-child(2) { animation-delay: 2s; }
+        .ripple:nth-child(3) { animation-delay: 4s; }
+        .ripple:nth-child(4) { animation-delay: 6s; }
+
+        @keyframes rippleExpand {
+            0% {
+                width: 100px;
+                height: 100px;
+                opacity: 0.6;
+            }
+            100% {
+                width: 150vmax;
+                height: 150vmax;
+                opacity: 0;
+            }
+        }
+
+        /* 水波光影 */
+        .water-light {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(100, 200, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(100, 180, 255, 0.06) 0%, transparent 50%);
+            animation: waterShimmer 10s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes waterShimmer {
+            0%, 100% { opacity: 0.5; transform: translateX(0); }
+            50% { opacity: 0.8; transform: translateX(10px); }
         }
 
         .container {
             max-width: 400px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            z-index: 1;
         }
 
         h1 {
@@ -238,6 +302,15 @@
     </style>
 </head>
 <body>
+<!-- 水面漣漪效果 -->
+<div class="ripple-container">
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+</div>
+<div class="water-light"></div>
+
 <div class="container">
     <h1>🌊 River</h1>
 
