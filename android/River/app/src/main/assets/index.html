@@ -173,11 +173,189 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* 曼陀羅情緒輪盤樣式 */
+        .mandala-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .mandala {
+            width: 280px;
+            height: 280px;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+            animation: mandalaBreath 4s ease-in-out infinite;
+        }
+
+        @keyframes mandalaBreath {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+            }
+            50% {
+                transform: scale(1.03);
+                filter: drop-shadow(0 8px 30px rgba(255,255,255,0.2));
+            }
+        }
+
+        .mandala:hover {
+            animation-play-state: paused;
+            transform: scale(1.05);
+        }
+
+        .petal {
+            transition: opacity 0.5s ease, transform 0.3s ease;
+        }
+
+        .petal.active {
+            opacity: 1 !important;
+            filter: brightness(1.2);
+        }
+
+        .emotion-label {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            transition: all 0.5s ease;
+        }
+
+        #emotionIndicator {
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .indicator-inner {
+            fill: #FFE66D;
+            transition: fill 0.5s ease;
+        }
+
+        /* 讓設定區塊可收合 */
+        .settings {
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🌳 River 河流客戶端</h1>
+    <h1>🌊 River</h1>
+
+    <!-- 曼陀羅情緒輪盤 -->
+    <div class="mandala-container">
+        <svg id="emotionWheel" viewBox="0 0 300 300" class="mandala">
+            <defs>
+                <!-- 裝飾性漸層 -->
+                <radialGradient id="centerGlow">
+                    <stop offset="0%" stop-color="rgba(255,255,255,0.8)"/>
+                    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                </radialGradient>
+                <!-- 8種情緒的顏色 -->
+                <linearGradient id="grad-joy" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#FFE66D"/><stop offset="100%" stop-color="#F7DC6F"/>
+                </linearGradient>
+                <linearGradient id="grad-trust" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#7DCEA0"/><stop offset="100%" stop-color="#58D68D"/>
+                </linearGradient>
+                <linearGradient id="grad-fear" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#45B39D"/><stop offset="100%" stop-color="#1ABC9C"/>
+                </linearGradient>
+                <linearGradient id="grad-surprise" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#5DADE2"/><stop offset="100%" stop-color="#3498DB"/>
+                </linearGradient>
+                <linearGradient id="grad-sadness" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#7FB3D5"/><stop offset="100%" stop-color="#5499C7"/>
+                </linearGradient>
+                <linearGradient id="grad-disgust" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#AF7AC5"/><stop offset="100%" stop-color="#9B59B6"/>
+                </linearGradient>
+                <linearGradient id="grad-anger" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#EC7063"/><stop offset="100%" stop-color="#E74C3C"/>
+                </linearGradient>
+                <linearGradient id="grad-anticipation" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#F5B041"/><stop offset="100%" stop-color="#F39C12"/>
+                </linearGradient>
+            </defs>
+
+            <!-- 外圈裝飾 -->
+            <circle cx="150" cy="150" r="145" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <circle cx="150" cy="150" r="140" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+            <!-- 8個情緒扇形 - 外層(強) -->
+            <g id="outer-petals" class="petal-layer">
+                <path class="petal" data-emotion="joy" d="M150,150 L150,20 A130,130 0 0,1 241.9,58.1 Z" fill="url(#grad-joy)" opacity="0.7"/>
+                <path class="petal" data-emotion="trust" d="M150,150 L241.9,58.1 A130,130 0 0,1 280,150 Z" fill="url(#grad-trust)" opacity="0.7"/>
+                <path class="petal" data-emotion="fear" d="M150,150 L280,150 A130,130 0 0,1 241.9,241.9 Z" fill="url(#grad-fear)" opacity="0.7"/>
+                <path class="petal" data-emotion="surprise" d="M150,150 L241.9,241.9 A130,130 0 0,1 150,280 Z" fill="url(#grad-surprise)" opacity="0.7"/>
+                <path class="petal" data-emotion="sadness" d="M150,150 L150,280 A130,130 0 0,1 58.1,241.9 Z" fill="url(#grad-sadness)" opacity="0.7"/>
+                <path class="petal" data-emotion="disgust" d="M150,150 L58.1,241.9 A130,130 0 0,1 20,150 Z" fill="url(#grad-disgust)" opacity="0.7"/>
+                <path class="petal" data-emotion="anger" d="M150,150 L20,150 A130,130 0 0,1 58.1,58.1 Z" fill="url(#grad-anger)" opacity="0.7"/>
+                <path class="petal" data-emotion="anticipation" d="M150,150 L58.1,58.1 A130,130 0 0,1 150,20 Z" fill="url(#grad-anticipation)" opacity="0.7"/>
+            </g>
+
+            <!-- 中層 -->
+            <g id="middle-petals" class="petal-layer">
+                <path class="petal" data-emotion="joy" d="M150,150 L150,55 A95,95 0 0,1 217.2,82.8 Z" fill="url(#grad-joy)" opacity="0.5"/>
+                <path class="petal" data-emotion="trust" d="M150,150 L217.2,82.8 A95,95 0 0,1 245,150 Z" fill="url(#grad-trust)" opacity="0.5"/>
+                <path class="petal" data-emotion="fear" d="M150,150 L245,150 A95,95 0 0,1 217.2,217.2 Z" fill="url(#grad-fear)" opacity="0.5"/>
+                <path class="petal" data-emotion="surprise" d="M150,150 L217.2,217.2 A95,95 0 0,1 150,245 Z" fill="url(#grad-surprise)" opacity="0.5"/>
+                <path class="petal" data-emotion="sadness" d="M150,150 L150,245 A95,95 0 0,1 82.8,217.2 Z" fill="url(#grad-sadness)" opacity="0.5"/>
+                <path class="petal" data-emotion="disgust" d="M150,150 L82.8,217.2 A95,95 0 0,1 55,150 Z" fill="url(#grad-disgust)" opacity="0.5"/>
+                <path class="petal" data-emotion="anger" d="M150,150 L55,150 A95,95 0 0,1 82.8,82.8 Z" fill="url(#grad-anger)" opacity="0.5"/>
+                <path class="petal" data-emotion="anticipation" d="M150,150 L82.8,82.8 A95,95 0 0,1 150,55 Z" fill="url(#grad-anticipation)" opacity="0.5"/>
+            </g>
+
+            <!-- 內層 -->
+            <g id="inner-petals" class="petal-layer">
+                <path class="petal" data-emotion="joy" d="M150,150 L150,90 A60,60 0 0,1 192.4,107.6 Z" fill="url(#grad-joy)" opacity="0.3"/>
+                <path class="petal" data-emotion="trust" d="M150,150 L192.4,107.6 A60,60 0 0,1 210,150 Z" fill="url(#grad-trust)" opacity="0.3"/>
+                <path class="petal" data-emotion="fear" d="M150,150 L210,150 A60,60 0 0,1 192.4,192.4 Z" fill="url(#grad-fear)" opacity="0.3"/>
+                <path class="petal" data-emotion="surprise" d="M150,150 L192.4,192.4 A60,60 0 0,1 150,210 Z" fill="url(#grad-surprise)" opacity="0.3"/>
+                <path class="petal" data-emotion="sadness" d="M150,150 L150,210 A60,60 0 0,1 107.6,192.4 Z" fill="url(#grad-sadness)" opacity="0.3"/>
+                <path class="petal" data-emotion="disgust" d="M150,150 L107.6,192.4 A60,60 0 0,1 90,150 Z" fill="url(#grad-disgust)" opacity="0.3"/>
+                <path class="petal" data-emotion="anger" d="M150,150 L90,150 A60,60 0 0,1 107.6,107.6 Z" fill="url(#grad-anger)" opacity="0.3"/>
+                <path class="petal" data-emotion="anticipation" d="M150,150 L107.6,107.6 A60,60 0 0,1 150,90 Z" fill="url(#grad-anticipation)" opacity="0.3"/>
+            </g>
+
+            <!-- 裝飾性同心圓 -->
+            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+            <circle cx="150" cy="150" r="95" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+            <circle cx="150" cy="150" r="60" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+
+            <!-- 8條放射線 -->
+            <g stroke="rgba(255,255,255,0.2)" stroke-width="0.5">
+                <line x1="150" y1="150" x2="150" y2="20"/>
+                <line x1="150" y1="150" x2="241.9" y2="58.1"/>
+                <line x1="150" y1="150" x2="280" y2="150"/>
+                <line x1="150" y1="150" x2="241.9" y2="241.9"/>
+                <line x1="150" y1="150" x2="150" y2="280"/>
+                <line x1="150" y1="150" x2="58.1" y2="241.9"/>
+                <line x1="150" y1="150" x2="20" y2="150"/>
+                <line x1="150" y1="150" x2="58.1" y2="58.1"/>
+            </g>
+
+            <!-- 中心發光點 (呼吸效果) -->
+            <circle cx="150" cy="150" r="25" fill="url(#centerGlow)">
+                <animate attributeName="r" values="20;30;20" dur="4s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.6;1;0.6" dur="4s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="150" cy="150" r="15" fill="url(#centerGlow)" opacity="0.5">
+                <animate attributeName="r" values="10;20;10" dur="4s" repeatCount="indefinite" begin="0.5s"/>
+            </circle>
+            <circle cx="150" cy="150" r="8" fill="rgba(255,255,255,0.95)">
+                <animate attributeName="r" values="6;10;6" dur="4s" repeatCount="indefinite"/>
+            </circle>
+
+            <!-- 當前情緒指示器 -->
+            <g id="emotionIndicator" transform="translate(150, 55)">
+                <circle r="12" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="2">
+                    <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite"/>
+                </circle>
+                <circle r="6" fill="currentColor" class="indicator-inner"/>
+            </g>
+        </svg>
+        <div id="emotionLabel" class="emotion-label">平靜</div>
+    </div>
 
     <div class="settings">
         <div class="setting-group">
@@ -270,8 +448,102 @@
             this.aiResponse = document.getElementById('aiResponse');
             this.playBtn = document.getElementById('playBtn');
 
+            // 情緒輪盤元素
+            this.emotionIndicator = document.getElementById('emotionIndicator');
+            this.emotionLabel = document.getElementById('emotionLabel');
+            this.indicatorInner = document.querySelector('.indicator-inner');
+
+            // 情緒對應的角度（用中文名稱匹配）
+            // row 0: 喜悅系, row 1: 信任系, row 2: 恐懼系, row 3: 驚喜系
+            // row 4: 悲傷系, row 5: 厭惡系, row 6: 憤怒系, row 7: 期待系
+            this.emotionMap = {
+                // 喜悅系 (row 0) - 角度 0°
+                '平靜': { angle: 0, intensity: 1, color: '#FFFF99' },
+                '喜悅': { angle: 0, intensity: 2, color: '#FFFF99' },
+                '狂喜': { angle: 0, intensity: 3, color: '#FFFF99' },
+                // 信任系 (row 1) - 角度 45°
+                '接納': { angle: 45, intensity: 1, color: '#99FF99' },
+                '信任': { angle: 45, intensity: 2, color: '#99FF99' },
+                '敬佩': { angle: 45, intensity: 3, color: '#99FF99' },
+                // 恐懼系 (row 2) - 角度 90°
+                '憂慮': { angle: 90, intensity: 1, color: '#99FFFF' },
+                '害怕': { angle: 90, intensity: 2, color: '#99FFFF' },
+                '恐懼': { angle: 90, intensity: 3, color: '#99FFFF' },
+                // 驚喜系 (row 3) - 角度 135°
+                '分心': { angle: 135, intensity: 1, color: '#CC99FF' },
+                '驚喜': { angle: 135, intensity: 2, color: '#CC99FF' },
+                '驚奇': { angle: 135, intensity: 3, color: '#CC99FF' },
+                // 悲傷系 (row 4) - 角度 180°
+                '沉思': { angle: 180, intensity: 1, color: '#FF99FF' },
+                '難過': { angle: 180, intensity: 2, color: '#FF99FF' },
+                '悲傷': { angle: 180, intensity: 3, color: '#FF99FF' },
+                // 厭惡系 (row 5) - 角度 225°
+                '無聊': { angle: 225, intensity: 1, color: '#FF99CC' },
+                '噁心': { angle: 225, intensity: 2, color: '#FF99CC' },
+                '厭惡': { angle: 225, intensity: 3, color: '#FF99CC' },
+                // 憤怒系 (row 6) - 角度 270°
+                '煩躁': { angle: 270, intensity: 1, color: '#FF9999' },
+                '憤怒': { angle: 270, intensity: 2, color: '#FF9999' },
+                '盛怒': { angle: 270, intensity: 3, color: '#FF9999' },
+                // 期待系 (row 7) - 角度 315°
+                '有興趣': { angle: 315, intensity: 1, color: '#FFCC99' },
+                '期待': { angle: 315, intensity: 2, color: '#FFCC99' },
+                '警戒': { angle: 315, intensity: 3, color: '#FFCC99' },
+            };
+
+            // 類別對應 (用於高亮花瓣)
+            this.emotionToCategory = {
+                '平靜': 'joy', '喜悅': 'joy', '狂喜': 'joy',
+                '接納': 'trust', '信任': 'trust', '敬佩': 'trust',
+                '憂慮': 'fear', '害怕': 'fear', '恐懼': 'fear',
+                '分心': 'surprise', '驚喜': 'surprise', '驚奇': 'surprise',
+                '沉思': 'sadness', '難過': 'sadness', '悲傷': 'sadness',
+                '無聊': 'disgust', '噁心': 'disgust', '厭惡': 'disgust',
+                '煩躁': 'anger', '憤怒': 'anger', '盛怒': 'anger',
+                '有興趣': 'anticipation', '期待': 'anticipation', '警戒': 'anticipation',
+            };
+
             console.log('元素初始化完成');
             this.debugInfo.innerHTML = '✅ 元素初始化完成';
+        }
+
+        // 更新情緒輪盤指示器（接受中文情緒名稱）
+        updateEmotionWheel(emotionName) {
+            const emotionData = this.emotionMap[emotionName];
+            if (!emotionData) {
+                console.warn('未知情緒:', emotionName);
+                return;
+            }
+
+            const { angle, intensity, color } = emotionData;
+            const category = this.emotionToCategory[emotionName];
+
+            // 根據強度決定距離中心的距離 (1=內層, 2=中層, 3=外層)
+            const distances = { 1: 75, 2: 112, 3: 130 };
+            const distance = distances[intensity] || 112;
+
+            // 計算指示器位置
+            const radian = (angle - 90) * Math.PI / 180;
+            const x = 150 + distance * Math.cos(radian);
+            const y = 150 + distance * Math.sin(radian);
+
+            // 動畫移動指示器
+            this.emotionIndicator.setAttribute('transform', `translate(${x}, ${y})`);
+
+            // 更新指示器顏色
+            this.indicatorInner.style.fill = color;
+
+            // 更新文字標籤
+            this.emotionLabel.textContent = emotionName;
+            this.emotionLabel.style.color = color;
+
+            // 高亮對應類別的花瓣
+            document.querySelectorAll('.petal').forEach(p => p.classList.remove('active'));
+            if (category) {
+                document.querySelectorAll(`.petal[data-emotion="${category}"]`).forEach(p => p.classList.add('active'));
+            }
+
+            console.log(`🎯 輪盤更新: ${emotionName}, 角度: ${angle}°, 強度: ${intensity}`);
         }
 
         bindEvents() {
@@ -595,6 +867,9 @@
                 console.log(`情感：${data.emotion}, RGB：[${data.rgb.join(', ')}]`);
                 this.applyEmotionColor(data.emotion, data.rgb);
                 this.addLog(`😊 ${data.emotion} RGB(${data.rgb.join(',')})`);
+
+                // 更新情緒輪盤（直接用中文情緒名稱）
+                this.updateEmotionWheel(data.emotion);
             }
 
             if (data.timings) {
