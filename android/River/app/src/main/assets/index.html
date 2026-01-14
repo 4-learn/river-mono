@@ -363,13 +363,6 @@
             <input type="url" id="server" value="https://river.4impact.cc" placeholder="輸入服務器URL">
         </div>
 
-        <div class="setting-group">
-            <label for="mode">模式：</label>
-            <select id="mode">
-                <option value="fast">快速模式</option>
-                <option value="full">完整模式</option>
-            </select>
-        </div>
 
         <button id="testBtn" style="width: 100%; padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 10px; margin-top: 10px;">
             測試連接
@@ -441,7 +434,6 @@
             this.status = document.getElementById('status');
             this.debugInfo = document.getElementById('debugInfo');
             this.serverInput = document.getElementById('server');
-            this.modeSelect = document.getElementById('mode');
             this.testBtn = document.getElementById('testBtn');
             this.responseSection = document.getElementById('responseSection');
             this.userText = document.getElementById('userText');
@@ -688,13 +680,7 @@
 
           try {
             const server = this.serverInput.value.replace(/\/+$/, '');
-            const mode = this.modeSelect.value;
-
-            if (mode === 'full') {
-              await this.fullMode(server, formData);
-            } else {
-              await this.fastMode(server, formData);
-            }
+            await this.fastMode(server, formData);
           } catch (error) {
             console.error('處理錯誤:', error);
             this.status.innerHTML = `❌ 處理失敗: ${error.message}`;
@@ -878,10 +864,6 @@
             }
 
             this.responseSection.style.display = 'block';
-
-            if (this.modeSelect.value === 'full') {
-                this.status.innerHTML = '✅ 處理完成';
-            }
         }
 
         applyEmotionColor(emotion, rgb) {
