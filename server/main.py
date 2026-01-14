@@ -2,6 +2,7 @@ import os
 import base64
 import time
 import uuid
+import logging
 from typing import Dict, Any, List
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import uvicorn
+
+logger = logging.getLogger("uvicorn")
 
 from emotion_wheel import get_emotion
 from llm_service import analyze_emotion_and_respond
@@ -20,6 +23,12 @@ from audio_utils import ffmpeg_to_wav16k_mono
 load_dotenv()
 
 app = FastAPI(title="River Server - Unified Emotion Analysis Engine")
+
+# 全域情緒狀態記憶（簡單實作，生產環境建議用資料庫）
+emotion_state = {
+    "row": 0,
+    "col": 1  # 預設從「喜悅」開始
+}
 
 # CORS 設定
 app.add_middleware(
@@ -110,6 +119,35 @@ def on_shutdown():
 async def health_check():
     """健康檢查（與 /healthz 相容）"""
     return {"status": "ok"}
+
+@app.get("/emotion/state")
+async def get_emotion_state():
+    """取得當前情緒狀態"""
+    current_emotion = get_emotion(emotion_state["row"], emotion_state["col"])
+    return {
+        "row": emotion_state["row"],
+        "col": emotion_state["col"],
+        "emotion": current_emotion
+    }
+
+@app.post("/emotion/reset")
+async def reset_emotion_state(row: int = 0, col: int = 1):
+    """重置情緒狀態到指定位置（預設為喜悅）"""
+    if not (0 <= row < 8 and 0 <= col < 3):
+        return JSONResponse({"error": "Invalid position"}, status_code=400)
+
+    emotion_state["row"] = row
+    emotion_state["col"] = col
+    current_emotion = get_emotion(row, col)
+
+    logger.info(f"[Main] 情緒狀態重置: ({row},{col}) - {current_emotion['name']}")
+
+    return {
+        "message": "Emotion state reset",
+        "row": row,
+        "col": col,
+        "emotion": current_emotion
+    }
 
 @app.get("/healthz")
 async def healthz():
@@ -211,11 +249,19 @@ async def dialogue(file: UploadFile = File(...)):
 
         logger.info(f"[ASR] 最終辨識結果: '{text}'")
 
-        # (3) 情緒分析（使用 River 的情緒網格，從中心位置開始）
-        current_row, current_col = 0, 1  # 預設從「喜悅」開始
+        # (3) 情緒分析（使用上一次的情緒狀態）
+        current_row, current_col = emotion_state["row"], emotion_state["col"]
+        logger.info(f"[Main] 從上次位置開始: ({current_row},{current_col})")
+
         llm_result = analyze_emotion_and_respond(text, current_row, current_col)
         new_row = llm_result["target_row"]
         new_col = llm_result["target_col"]
+
+        # 更新全域狀態
+        emotion_state["row"] = new_row
+        emotion_state["col"] = new_col
+        logger.info(f"[Main] 情緒狀態更新: ({new_row},{new_col})")
+
         emotion_info = get_emotion(new_row, new_col)
         t3 = time.time()
 
@@ -293,11 +339,19 @@ async def dialogue_fast(background_tasks: BackgroundTasks, file: UploadFile = Fi
         if not text:
             return JSONResponse({"error": "no_speech"}, status_code=400)
 
-        # (3) 情緒分析
-        current_row, current_col = 0, 1
+        # (3) 情緒分析（使用上一次的情緒狀態）
+        current_row, current_col = emotion_state["row"], emotion_state["col"]
+        logger.info(f"[Main] 從上次位置開始: ({current_row},{current_col})")
+
         llm_result = analyze_emotion_and_respond(text, current_row, current_col)
         new_row = llm_result["target_row"]
         new_col = llm_result["target_col"]
+
+        # 更新全域狀態
+        emotion_state["row"] = new_row
+        emotion_state["col"] = new_col
+        logger.info(f"[Main] 情緒狀態更新: ({new_row},{new_col})")
+
         emotion_info = get_emotion(new_row, new_col)
         t3 = time.time()
 

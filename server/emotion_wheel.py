@@ -2,53 +2,53 @@
 # 基於圖片中的情感輪盤定義
 
 EMOTION_WHEEL = [
-    # row 0
+    # row 0 - 喜悅系：鮮黃色
     [
-        {"name": "平靜", "color": "#FFFF99"},
-        {"name": "喜悅", "color": "#FFFF99"},
-        {"name": "狂喜", "color": "#FFFF99"},
+        {"name": "平靜", "color": "#FFFF00"},      # 亮黃色
+        {"name": "喜悅", "color": "#FFFF00"},
+        {"name": "狂喜", "color": "#FFFF00"},
     ],
-    # row 1
+    # row 1 - 信任系：綠色
     [
-        {"name": "接納", "color": "#99FF99"},
-        {"name": "信任", "color": "#99FF99"},
-        {"name": "敬佩", "color": "#99FF99"},
+        {"name": "接納", "color": "#00FF00"},      # 亮綠色
+        {"name": "信任", "color": "#00FF00"},
+        {"name": "敬佩", "color": "#00FF00"},
     ],
-    # row 2
+    # row 2 - 恐懼系：青色
     [
-        {"name": "憂慮", "color": "#99FFFF"},
-        {"name": "害怕", "color": "#99FFFF"},
-        {"name": "恐懼", "color": "#99FFFF"},
+        {"name": "憂慮", "color": "#00FFFF"},      # 亮青色
+        {"name": "害怕", "color": "#00FFFF"},
+        {"name": "恐懼", "color": "#00FFFF"},
     ],
-    # row 3
+    # row 3 - 驚喜系：藍色
     [
-        {"name": "分心", "color": "#CC99FF"},
-        {"name": "驚喜", "color": "#CC99FF"},
-        {"name": "驚奇", "color": "#CC99FF"},
+        {"name": "分心", "color": "#0000FF"},      # 亮藍色
+        {"name": "驚喜", "color": "#0000FF"},
+        {"name": "驚奇", "color": "#0000FF"},
     ],
-    # row 4
+    # row 4 - 悲傷系：深藍色
     [
-        {"name": "沉思", "color": "#FF99FF"},
-        {"name": "難過", "color": "#FF99FF"},
-        {"name": "悲傷", "color": "#FF99FF"},
+        {"name": "沉思", "color": "#000080"},      # 海軍藍
+        {"name": "難過", "color": "#000080"},
+        {"name": "悲傷", "color": "#000080"},
     ],
-    # row 5
+    # row 5 - 厭惡系：紫色
     [
-        {"name": "無聊", "color": "#FF99CC"},
-        {"name": "噁心", "color": "#FF99CC"},
-        {"name": "厭惡", "color": "#FF99CC"},
+        {"name": "無聊", "color": "#FF00FF"},      # 亮紫色（洋紅）
+        {"name": "噁心", "color": "#FF00FF"},
+        {"name": "厭惡", "color": "#FF00FF"},
     ],
-    # row 6
+    # row 6 - 憤怒系：紅色
     [
-        {"name": "煩躁", "color": "#FF9999"},
-        {"name": "憤怒", "color": "#FF9999"},
-        {"name": "盛怒", "color": "#FF9999"},
+        {"name": "煩躁", "color": "#FF0000"},      # 亮紅色
+        {"name": "憤怒", "color": "#FF0000"},
+        {"name": "盛怒", "color": "#FF0000"},
     ],
-    # row 7
+    # row 7 - 期待系：橙色
     [
-        {"name": "有興趣", "color": "#FFCC99"},
-        {"name": "期待", "color": "#FFCC99"},
-        {"name": "警戒", "color": "#FFCC99"},
+        {"name": "有興趣", "color": "#FF8000"},    # 亮橙色
+        {"name": "期待", "color": "#FF8000"},
+        {"name": "警戒", "color": "#FF8000"},
     ],
 ]
 
@@ -87,7 +87,7 @@ def get_emotion(row: int, col: int) -> dict:
 
 def calculate_move(current_row: int, current_col: int, target_row: int, target_col: int) -> tuple:
     """
-    計算從當前位置移動到目標位置（一次只能走一格）
+    計算從當前位置移動到目標位置（一次只能走一格，支援斜向）
     返回新的 (row, col)
     """
     # 計算差距
@@ -98,14 +98,14 @@ def calculate_move(current_row: int, current_col: int, target_row: int, target_c
     new_row = current_row
     new_col = current_col
 
-    # 優先移動 row（情感類別）
+    # 支援斜向移動：同時移動 row 和 col
     if row_diff != 0:
         if row_diff > 0:
             new_row = min(current_row + 1, 7)
         else:
             new_row = max(current_row - 1, 0)
-    # 如果 row 已經相同，則移動 col（強度）
-    elif col_diff != 0:
+
+    if col_diff != 0:
         if col_diff > 0:
             new_col = min(current_col + 1, 2)
         else:
@@ -115,18 +115,26 @@ def calculate_move(current_row: int, current_col: int, target_row: int, target_c
 
 
 def get_adjacent_positions(row: int, col: int) -> list:
-    """取得相鄰的所有可能位置（上下左右，最多4個）"""
+    """取得相鄰的所有可能位置（包含斜向，最多8個方向）"""
     positions = []
-    # 上
-    if row > 0:
-        positions.append((row - 1, col))
-    # 下
-    if row < 7:
-        positions.append((row + 1, col))
-    # 左
-    if col > 0:
-        positions.append((row, col - 1))
-    # 右
-    if col < 2:
-        positions.append((row, col + 1))
+
+    # 8 個方向：上、下、左、右、左上、右上、左下、右下
+    directions = [
+        (-1, 0),   # 上
+        (1, 0),    # 下
+        (0, -1),   # 左
+        (0, 1),    # 右
+        (-1, -1),  # 左上
+        (-1, 1),   # 右上
+        (1, -1),   # 左下
+        (1, 1),    # 右下
+    ]
+
+    for dr, dc in directions:
+        new_row = row + dr
+        new_col = col + dc
+        # 檢查是否在有效範圍內
+        if 0 <= new_row < 8 and 0 <= new_col < 3:
+            positions.append((new_row, new_col))
+
     return positions

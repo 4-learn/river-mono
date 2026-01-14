@@ -1,6 +1,9 @@
 import os
+import logging
 from openai import OpenAI
 from emotion_wheel import EMOTION_CATEGORIES, get_emotion, get_adjacent_positions
+
+logger = logging.getLogger("uvicorn")
 
 
 def get_openai_client():
@@ -29,21 +32,32 @@ def analyze_emotion_and_respond(user_text: str, current_row: int, current_col: i
         }
     """
     current_emotion = get_emotion(current_row, current_col)
+    logger.info(f"[LLM] 當前位置: ({current_row},{current_col}) - {current_emotion['name']}")
+    logger.info(f"[LLM] 使用者輸入: '{user_text}'")
 
-    # 取得相鄰位置的情感選項
-    adjacent_positions = get_adjacent_positions(current_row, current_col)
+    # 列出所有可能的情感位置（8x3 = 24 個）
+    all_positions = []
     emotion_options = []
-    for row, col in adjacent_positions:
-        emo = get_emotion(row, col)
-        emotion_options.append(f"({row},{col}): {emo['name']} - {emo['category']}")
+    for row in range(8):
+        for col in range(3):
+            emo = get_emotion(row, col)
+            all_positions.append((row, col))
+            emotion_options.append(f"({row},{col}): {emo['name']} - {emo['category']}")
+
+    logger.info(f"[LLM] 全部可選位置數量: {len(all_positions)}")
 
     # 構建 prompt
-    system_prompt = f"""你是一個情感分析助手。根據使用者的文字，判斷情感並選擇最適合的情感位置。
+    system_prompt = f"""你是一個敏銳的情感分析助手。請**純粹根據使用者當下的文字內容**判斷情感，不要被之前的情緒狀態影響。
 
 當前情感位置: ({current_row}, {current_col}) - {current_emotion['name']} ({current_emotion['category']})
 
-可移動的相鄰情感位置（一次只能移動一格）:
+所有情感位置（可自由選擇）:
 {chr(10).join(emotion_options)}
+
+**重要規則**：
+1. **獨立判斷**：每次都要重新分析使用者的文字，不要假設情緒會延續
+2. **精確匹配**：選擇最符合當下文字情感的位置
+3. **強度判斷**：col=0(低強度)、col=1(中強度)、col=2(高強度)
 
 請分析使用者的文字情感，並：
 1. 選擇最符合的情感位置 (row, col)
@@ -73,14 +87,22 @@ def analyze_emotion_and_respond(user_text: str, current_row: int, current_col: i
         import json
         result = json.loads(response.choices[0].message.content)
 
+        logger.info(f"[LLM] 原始回應: {result}")
+
         # 驗證 target position 是否在相鄰位置中
         target_row = result.get("target_row", current_row)
         target_col = result.get("target_col", current_col)
 
-        # 確保移動合法（必須是相鄰位置）
-        if (target_row, target_col) not in adjacent_positions and (target_row, target_col) != (current_row, current_col):
-            # 如果 LLM 選擇了不合法的位置，保持當前位置
+        logger.info(f"[LLM] LLM 選擇位置: ({target_row},{target_col})")
+        logger.info(f"[LLM] 偵測情緒: {result.get('detected_emotion', 'unknown')}")
+
+        # 檢查位置是否有效
+        if not (0 <= target_row < 8 and 0 <= target_col < 3):
+            logger.warning(f"[LLM] 位置超出範圍！({target_row},{target_col})，保持原位置")
             target_row, target_col = current_row, current_col
+        else:
+            target_emotion = get_emotion(target_row, target_col)
+            logger.info(f"[LLM] 最終位置: ({target_row},{target_col}) - {target_emotion['name']}")
 
         return {
             "target_row": target_row,
@@ -90,7 +112,7 @@ def analyze_emotion_and_respond(user_text: str, current_row: int, current_col: i
         }
 
     except Exception as e:
-        print(f"LLM 錯誤: {e}")
+        logger.error(f"[LLM] 錯誤: {e}", exc_info=True)
         # 發生錯誤時，保持當前位置
         return {
             "target_row": current_row,
